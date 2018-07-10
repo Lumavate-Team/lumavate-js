@@ -117,7 +117,7 @@ KalmanFilter.prototype.getestimate = function() {
 
 
 
-function ComplementaryFilter(kFilter) {
+function FixedKalFilter(kFilter) {
   this.kFilter = kFilter;
 
 
@@ -152,7 +152,7 @@ function ComplementaryFilter(kFilter) {
   this.gyroIntegralQ = new THREE.Quaternion();
 }
 
-ComplementaryFilter.prototype.addGPSMeasurement = function(coords,timestampS) {
+FixedKalFilter.prototype.addGPSMeasurement = function(coords,timestampS) {
   if (!this.isGPSInitialized) {
     this.isGPSInitialized = true;
     this.gpsReferenceFrame = coords;
@@ -161,12 +161,12 @@ ComplementaryFilter.prototype.addGPSMeasurement = function(coords,timestampS) {
   this.yfilter.updatepos((coords.latitude-this.gpsReferenceFrame.latitude)*111194.926517,coords.accuracy);
 };
 
-ComplementaryFilter.prototype.addAccelMeasurement = function(vector,nogravity,timestampS) {
+FixedKalFilter.prototype.addAccelMeasurement = function(vector,nogravity,timestampS) {
   this.currentAccelMeasurement.set(vector, timestampS);
   this.currentAccelWorldspace.set(nogravity, timestampS);
 };
 
-ComplementaryFilter.prototype.addGyroMeasurement = function(vector, timestampS) {
+FixedKalFilter.prototype.addGyroMeasurement = function(vector, timestampS) {
   this.currentGyroMeasurement.set(vector, timestampS);
 
   var deltaT = timestampS - this.previousGyroMeasurement.timestampS;
@@ -177,7 +177,7 @@ ComplementaryFilter.prototype.addGyroMeasurement = function(vector, timestampS) 
   this.previousGyroMeasurement.copy(this.currentGyroMeasurement);
 };
 
-ComplementaryFilter.prototype.run_ = function() {
+FixedKalFilter.prototype.run_ = function() {
   this.accelQ = this.accelToQuaternion_(this.currentAccelMeasurement.sample);
 
   if (!this.isOrientationInitialized) {
@@ -192,7 +192,7 @@ ComplementaryFilter.prototype.run_ = function() {
   // Convert gyro rotation vector to a quaternion delta.
   var gyroDeltaQ = this.gyroToQuaternionDelta_(this.currentGyroMeasurement.sample, deltaT);
   this.gyroIntegralQ.multiply(gyroDeltaQ);
-  
+
   // filter_1 = K * (filter_0 + gyro * dT) + (1 - K) * accel.
   this.filterQ.copy(this.previousFilterQ);
   this.filterQ.multiply(gyroDeltaQ);
@@ -238,14 +238,14 @@ ComplementaryFilter.prototype.run_ = function() {
 
 };
 
-ComplementaryFilter.prototype.getOrientation = function() {
+FixedKalFilter.prototype.getOrientation = function() {
   return this.filterQ;
 };
-ComplementaryFilter.prototype.getPosition = function() {
+FixedKalFilter.prototype.getPosition = function() {
   return this.estimatedPosition;
 };
 
-ComplementaryFilter.prototype.accelToQuaternion_ = function(accel) {
+FixedKalFilter.prototype.accelToQuaternion_ = function(accel) {
   var normAccel = new THREE.Vector3();
   normAccel.copy(accel);
   normAccel.normalize();
@@ -254,7 +254,7 @@ ComplementaryFilter.prototype.accelToQuaternion_ = function(accel) {
   return quat;
 };
 
-ComplementaryFilter.prototype.gyroToQuaternionDelta_ = function(gyro, dt) {
+FixedKalFilter.prototype.gyroToQuaternionDelta_ = function(gyro, dt) {
   // Extract axis and angle from the gyroscope data.
   var quat = new THREE.Quaternion();
   var axis = new THREE.Vector3();
@@ -270,7 +270,7 @@ ComplementaryFilter.prototype.gyroToQuaternionDelta_ = function(gyro, dt) {
 
 
 
-function PosePredictor(predictionTimeS) {
+function OrientationPredictor(predictionTimeS) {
   this.predictionTimeS = predictionTimeS;
 
   // The quaternion corresponding to the previous state.
@@ -284,7 +284,7 @@ function PosePredictor(predictionTimeS) {
   this.outQ = new THREE.Quaternion();
 }
 
-PosePredictor.prototype.getPrediction = function(currentQ, gyro, timestampS) {
+OrientationPredictor.prototype.getPrediction = function(currentQ, gyro, timestampS) {
   if (!this.previousTimestampS) {
     this.previousQ.copy(currentQ);
     this.previousTimestampS = timestampS;
@@ -329,11 +329,9 @@ PosePredictor.prototype.getPrediction = function(currentQ, gyro, timestampS) {
 
 
 
+function PhoneTracker(settings) {
+  this.settings = settings;
 
-
-
-
-function ComplementaryOrientation() {
   this.accelerometer = new THREE.Vector3();
   this.gyroscope = new THREE.Vector3();
   this.forcedRefOffset = new THREE.Vector2(0,0);
@@ -351,8 +349,8 @@ function ComplementaryOrientation() {
   }
 
 
-  this.filter = new ComplementaryFilter(0.98);
-  this.posePredictor = new PosePredictor(0.050);
+  this.filter = new FixedKalFilter(0.98);
+  this.posePredictor = new OrientationPredictor(0.050);
 
   this.filterToWorldQ = new THREE.Quaternion();
 
@@ -369,7 +367,7 @@ function ComplementaryOrientation() {
 
 
 
-ComplementaryOrientation.prototype.onDeviceMotionChange_ = function(deviceMotion) {
+PhoneTracker.prototype.onDeviceMotionChange_ = function(deviceMotion) {
   var accGravity = deviceMotion.accelerationIncludingGravity;
   var rotRate = deviceMotion.rotationRate;
   var timestampS = deviceMotion.timeStamp / 1000;
@@ -386,11 +384,11 @@ ComplementaryOrientation.prototype.onDeviceMotionChange_ = function(deviceMotion
 };
 
 
-ComplementaryOrientation.prototype.onScreenOrientationChange_ = function(screenOrientation) {
+PhoneTracker.prototype.onScreenOrientationChange_ = function(screenOrientation) {
   this.setScreenTransform_();
 };
 
-ComplementaryOrientation.prototype.setScreenTransform_ = function() {
+PhoneTracker.prototype.setScreenTransform_ = function() {
   this.worldToScreenQ.set(0, 0, 0, 1);
   switch (window.orientation) {
     case 0:
@@ -405,11 +403,14 @@ ComplementaryOrientation.prototype.setScreenTransform_ = function() {
       break;
   }
 };
-ComplementaryOrientation.prototype.forceReferenceFrame = function(frame) {
+PhoneTracker.prototype.forceReferenceFrame = function(frame) {
   this.forcedReferenceFrame = frame;
   this.forcedRefOffset = null;
 };
-ComplementaryOrientation.prototype.getOrientationQuaternion = function() {
+PhoneTracker.prototype.getReferenceFrame = function() {
+  return this.filter.gpsReferenceFrame;
+};
+PhoneTracker.prototype.getOrientationQuaternion = function() {
   // Convert from filter space to the the same system used by the
   // deviceorientation event.
   var orientation = this.filter.getOrientation();
@@ -429,13 +430,13 @@ ComplementaryOrientation.prototype.getOrientationQuaternion = function() {
 
   return out;
 };
-ComplementaryOrientation.prototype.getOrientationEuler = function() {
+PhoneTracker.prototype.getOrientationEuler = function() {
   var rotation = new THREE.Euler().setFromQuaternion(this.getOrientationQuaternion(),'XYZ');
   return rotation;
 };
 
 
-ComplementaryOrientation.prototype.getPosition = function() {
+PhoneTracker.prototype.getPosition = function() {
   if (this.filter.isGPSInitialized) {
     if (this.forcedRefOffset===null) {
       this.forcedRefOffset = new THREE.Vector2((this.filter.gpsReferenceFrame.longitude-this.forcedReferenceFrame.longitude)*111194.926517,(this.filter.gpsReferenceFrame.latitude-this.forcedReferenceFrame.latitude)*111194.926517);
