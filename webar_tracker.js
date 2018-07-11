@@ -8,17 +8,17 @@ MAX_TIMESTEP = 1;
 var DEBUG = false;
 
 
-//these are fine-tuning parameters that have not yet been fine-tuned.
-Q_POSITION = 0.1;
-Q_VELOCITY = 0.1;
+// //these are fine-tuning parameters that have not yet been fine-tuned.
+// Q_POSITION = 0.1;
+// Q_VELOCITY = 0.1;
 
 
-R_POSITION_MULTIPLIER = 1;//multiplied by geolocation accuracy to get accuracy of gps
-R_VELOCITY = 0.1;//not sure if this has measurable effect
+// R_POSITION_MULTIPLIER = 1;//multiplied by geolocation accuracy to get accuracy of gps
+// R_VELOCITY = 0.1;//not sure if this has measurable effect
 
 
-REQUEST_HIGH_ACCURACY = false;
-TIME_BETWEEN_REQUESTS = 200;//this is in ms.
+// REQUEST_HIGH_ACCURACY = true;
+// TIME_BETWEEN_REQUESTS = 200;//this is in ms.
 
 
 
@@ -38,7 +38,7 @@ SensorSample.prototype.copy = function(sensorSample) {
 
 
 // Helper method to validate the time steps of sensor timestamps.
-function isTimestampDeltaValid(timestampDeltaS) {return 
+function isTimestampDeltaValid(timestampDeltaS) {
   if (isNaN(timestampDeltaS)) {
     return false;
   }
@@ -121,11 +121,11 @@ function FixedKalFilter(kFilter) {
   this.kFilter = kFilter;
 
 
-  this.currentAccelWorldspace = new SensorSample();
-  this.estimatedPosition = new THREE.Vector2(0,0);
+  // this.currentAccelWorldspace = new SensorSample();
+  // this.estimatedPosition = new THREE.Vector2(0,0);
 
-  this.xfilter = new KalmanFilter();
-  this.yfilter = new KalmanFilter();
+  // this.xfilter = new KalmanFilter();
+  // this.yfilter = new KalmanFilter();
 
 
 
@@ -149,21 +149,21 @@ function FixedKalFilter(kFilter) {
   // Measured gravity based on accelerometer.
   this.measuredGravity = new THREE.Vector3();
   // Debug only quaternion of gyro-based orientation.
-  this.gyroIntegralQ = new THREE.Quaternion();
+  // this.gyroIntegralQ = new THREE.Quaternion();
 }
 
-FixedKalFilter.prototype.addGPSMeasurement = function(coords,timestampS) {
-  if (!this.isGPSInitialized) {
-    this.isGPSInitialized = true;
-    this.gpsReferenceFrame = coords;
-  }
-  this.xfilter.updatepos((coords.longitude-this.gpsReferenceFrame.longitude)*111194.926517,coords.accuracy);
-  this.yfilter.updatepos((coords.latitude-this.gpsReferenceFrame.latitude)*111194.926517,coords.accuracy);
-};
+// FixedKalFilter.prototype.addGPSMeasurement = function(coords,timestampS) {
+//   if (!this.isGPSInitialized) {
+//     this.isGPSInitialized = true;
+//     this.gpsReferenceFrame = coords;
+//   }
+//   this.xfilter.updatepos((coords.longitude-this.gpsReferenceFrame.longitude)*111194.926517,coords.accuracy);
+//   this.yfilter.updatepos((coords.latitude-this.gpsReferenceFrame.latitude)*111194.926517,coords.accuracy);
+// };
 
-FixedKalFilter.prototype.addAccelMeasurement = function(vector,nogravity,timestampS) {
+FixedKalFilter.prototype.addAccelMeasurement = function(vector,timestampS) {
   this.currentAccelMeasurement.set(vector, timestampS);
-  this.currentAccelWorldspace.set(nogravity, timestampS);
+  // this.currentAccelWorldspace.set(nogravity, timestampS);
 };
 
 FixedKalFilter.prototype.addGyroMeasurement = function(vector, timestampS) {
@@ -185,13 +185,12 @@ FixedKalFilter.prototype.run_ = function() {
     this.isOrientationInitialized = true;
     return;
   }
-
   var deltaT = this.currentGyroMeasurement.timestampS -
       this.previousGyroMeasurement.timestampS;
 
   // Convert gyro rotation vector to a quaternion delta.
   var gyroDeltaQ = this.gyroToQuaternionDelta_(this.currentGyroMeasurement.sample, deltaT);
-  this.gyroIntegralQ.multiply(gyroDeltaQ);
+  // this.gyroIntegralQ.multiply(gyroDeltaQ);
 
   // filter_1 = K * (filter_0 + gyro * dT) + (1 - K) * accel.
   this.filterQ.copy(this.previousFilterQ);
@@ -229,11 +228,11 @@ FixedKalFilter.prototype.run_ = function() {
 
 
 
-  if (this.isGPSInitialized) {
-    this.xfilter.updateacc(this.currentAccelWorldspace.sample.x,deltaT);
-    this.yfilter.updateacc(this.currentAccelWorldspace.sample.y,deltaT);
-    this.estimatedPosition.set(this.xfilter.getestimate(),this.yfilter.getestimate());
-  }
+  // if (this.isGPSInitialized) {
+  //   this.xfilter.updateacc(this.currentAccelWorldspace.sample.x,deltaT);
+  //   this.yfilter.updateacc(this.currentAccelWorldspace.sample.y,deltaT);
+  //   this.estimatedPosition.set(this.xfilter.getestimate(),this.yfilter.getestimate());
+  // }
 
 
 };
@@ -241,9 +240,9 @@ FixedKalFilter.prototype.run_ = function() {
 FixedKalFilter.prototype.getOrientation = function() {
   return this.filterQ;
 };
-FixedKalFilter.prototype.getPosition = function() {
-  return this.estimatedPosition;
-};
+// FixedKalFilter.prototype.getPosition = function() {
+//   return this.estimatedPosition;
+// };
 
 FixedKalFilter.prototype.accelToQuaternion_ = function(accel) {
   var normAccel = new THREE.Vector3();
@@ -338,15 +337,15 @@ function PhoneTracker(settings) {
 
   window.addEventListener('devicemotion', this.onDeviceMotionChange_.bind(this));
   window.addEventListener('orientationchange', this.onScreenOrientationChange_.bind(this));
-  navigator.geolocation.getCurrentPosition(respond,function(){},{enableHighAccuracy:REQUEST_HIGH_ACCURACY,maximumAge:10,timeout:Infinity});
+  // navigator.geolocation.getCurrentPosition(respond,function(){},{enableHighAccuracy:REQUEST_HIGH_ACCURACY,maximumAge:10,timeout:Infinity});
 
-  var self=this;
-  function respond(position) {
-    self.filter.addGPSMeasurement(position.coords);
-    setTimeout(function() {
-      navigator.geolocation.getCurrentPosition(respond,function(){},{enableHighAccuracy:REQUEST_HIGH_ACCURACY,maximumAge:10,timeout:Infinity});
-    },TIME_BETWEEN_REQUESTS);
-  }
+  // var self=this;
+  // function respond(position) {
+  //   self.filter.addGPSMeasurement(position.coords);
+  //   setTimeout(function() {
+  //     navigator.geolocation.getCurrentPosition(respond,function(){},{enableHighAccuracy:REQUEST_HIGH_ACCURACY,maximumAge:10,timeout:Infinity});
+  //   },TIME_BETWEEN_REQUESTS);
+  // }
 
 
   this.filter = new FixedKalFilter(0.98);
@@ -377,7 +376,7 @@ PhoneTracker.prototype.onDeviceMotionChange_ = function(deviceMotion) {
 
   this.gyroscope.multiplyScalar(Math.PI / 180);
 
-  this.filter.addAccelMeasurement(this.accelerometer,deviceMotion.acceleration,timestampS);
+  this.filter.addAccelMeasurement(this.accelerometer,timestampS);
   this.filter.addGyroMeasurement(this.gyroscope, timestampS);
 
   this.previousTimestampS = timestampS;
@@ -403,13 +402,13 @@ PhoneTracker.prototype.setScreenTransform_ = function() {
       break;
   }
 };
-PhoneTracker.prototype.forceReferenceFrame = function(frame) {
-  this.forcedReferenceFrame = frame;
-  this.forcedRefOffset = null;
-};
-PhoneTracker.prototype.getReferenceFrame = function() {
-  return this.filter.gpsReferenceFrame;
-};
+// PhoneTracker.prototype.forceReferenceFrame = function(frame) {
+//   this.forcedReferenceFrame = frame;
+//   this.forcedRefOffset = null;
+// };
+// PhoneTracker.prototype.getReferenceFrame = function() {
+//   return this.filter.gpsReferenceFrame;
+// };
 PhoneTracker.prototype.getOrientationQuaternion = function() {
   // Convert from filter space to the the same system used by the
   // deviceorientation event.
@@ -436,16 +435,18 @@ PhoneTracker.prototype.getOrientationEuler = function() {
 };
 
 
-PhoneTracker.prototype.getPosition = function() {
-  if (this.filter.isGPSInitialized) {
-    if (this.forcedRefOffset===null) {
-      this.forcedRefOffset = new THREE.Vector2((this.filter.gpsReferenceFrame.longitude-this.forcedReferenceFrame.longitude)*111194.926517,(this.filter.gpsReferenceFrame.latitude-this.forcedReferenceFrame.latitude)*111194.926517);
-    }
-    return this.filter.getPosition().add(this.forcedRefOffset);
-  } else {
-    return null;
-  }
-};
+// PhoneTracker.prototype.getPosition = function() {
+//   if (this.filter.isGPSInitialized) {
+//     if (this.forcedRefOffset===null) {
+//       this.forcedRefOffset = new THREE.Vector2((this.filter.gpsReferenceFrame.longitude-this.forcedReferenceFrame.longitude)*111194.926517,(this.filter.gpsReferenceFrame.latitude-this.forcedReferenceFrame.latitude)*111194.926517);
+//     }
+//     var posit = this.filter.getPosition().add(this.forcedRefOffset);
+//     console.log(posit);
+//     return posit;
+//   } else {
+//     return null;
+//   }
+// };
 
 
 
