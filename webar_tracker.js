@@ -433,7 +433,7 @@ PhoneTracker.prototype.getOrientationQuaternion = function() {
 
   return out;
 };
-PhoneTracker.prototype.getAccellerationWorld = function() {
+PhoneTracker.prototype.getAccelerationWorld = function() {
   var qua = this.getOrientationQuaternion();
   var x = new THREE.Vector3(this.accelerometernogravity.x,this.accelerometernogravity.y,this.accelerometernogravity.z);
   x.applyQuaternion(qua);
