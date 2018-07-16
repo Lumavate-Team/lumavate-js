@@ -331,6 +331,7 @@ function PhoneTracker() {
   this.accelerometernogravity = new THREE.Vector3();
   this.gyroscope = new THREE.Vector3();
   this.forcedRefOffset = new THREE.Vector2(0,0);
+  // alert("sefasdfa");
 
   // window.addEventListener('devicemotion', this.onDeviceMotionChange_.bind(this));
   // window.addEventListener('orientationchange', this.onScreenOrientationChange_.bind(this));

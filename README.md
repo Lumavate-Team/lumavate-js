@@ -11,8 +11,10 @@ var rotationeuler = device.getOrientationEuler();//These currently give the orie
 var accellerationworld = device.getAccellerationWorld();
 
 
-window.addEventListener('devicemotion', this.handleDeviceMotionEvent.bind(this));
-window.addEventListener('orientationchange', this.handleScreenOrientationEvent.bind(this));
+
+window.addEventListener('devicemotion',      function(e){device.handleDeviceMotionEvent(e)});
+window.addEventListener('orientationchange', function(e){device.handleScreenOrientationEvent(e)});
+
 
 this library requires:
 
