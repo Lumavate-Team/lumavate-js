@@ -1,8 +1,5 @@
 
 
-
-
-
 MIN_TIMESTEP = 0.001;
 MAX_TIMESTEP = 1;
 var DEBUG = false;
@@ -328,15 +325,19 @@ OrientationPredictor.prototype.getPrediction = function(currentQ, gyro, timestam
 
 
 
-function PhoneTracker(settings) {
-  this.settings = settings;
+function PhoneTracker() {
 
   this.accelerometer = new THREE.Vector3();
+  this.accelerometernogravity = new THREE.Vector3();
   this.gyroscope = new THREE.Vector3();
   this.forcedRefOffset = new THREE.Vector2(0,0);
 
-  window.addEventListener('devicemotion', this.onDeviceMotionChange_.bind(this));
-  window.addEventListener('orientationchange', this.onScreenOrientationChange_.bind(this));
+  // window.addEventListener('devicemotion', this.onDeviceMotionChange_.bind(this));
+  // window.addEventListener('orientationchange', this.onScreenOrientationChange_.bind(this));
+
+
+
+
   // navigator.geolocation.getCurrentPosition(respond,function(){},{enableHighAccuracy:REQUEST_HIGH_ACCURACY,maximumAge:10,timeout:Infinity});
 
   // var self=this;
@@ -366,12 +367,14 @@ function PhoneTracker(settings) {
 
 
 
-PhoneTracker.prototype.onDeviceMotionChange_ = function(deviceMotion) {
+PhoneTracker.prototype.handleDeviceMotionEvent = function(deviceMotion) {
   var accGravity = deviceMotion.accelerationIncludingGravity;
+  var acc = deviceMotion.acceleration;
   var rotRate = deviceMotion.rotationRate;
   var timestampS = deviceMotion.timeStamp / 1000;
 
   this.accelerometer.set(-accGravity.x, -accGravity.y, -accGravity.z);
+  this.accelerometernogravity.set(-acc.x, -acc.y, -acc.z);
   this.gyroscope.set(rotRate.alpha, rotRate.beta, rotRate.gamma);
 
   this.gyroscope.multiplyScalar(Math.PI / 180);
@@ -383,7 +386,7 @@ PhoneTracker.prototype.onDeviceMotionChange_ = function(deviceMotion) {
 };
 
 
-PhoneTracker.prototype.onScreenOrientationChange_ = function(screenOrientation) {
+PhoneTracker.prototype.handleScreenOrientationEvent = function(screenOrientation) {
   this.setScreenTransform_();
 };
 
@@ -423,11 +426,17 @@ PhoneTracker.prototype.getOrientationQuaternion = function() {
   out.multiply(this.worldToScreenQ);
 
   //go back to css transform coordinates
-  out.w = out.w*-1;
-  out.z = out.z*-1;
-  out.x = out.x*-1;
+  // out.w = out.w*-1;
+  // out.z = out.z*-1;
+  // out.x = out.x*-1;
 
   return out;
+};
+PhoneTracker.prototype.getAccellerationWorld = function() {
+  var qua = this.getOrientationQuaternion();
+  var x = new THREE.Vector3(this.accelerometernogravity.x,this.accelerometernogravity.y,this.accelerometernogravity.z);
+  x.applyQuaternion(qua);
+  return x;
 };
 PhoneTracker.prototype.getOrientationEuler = function() {
   var rotation = new THREE.Euler().setFromQuaternion(this.getOrientationQuaternion(),'XYZ');
@@ -447,30 +456,5 @@ PhoneTracker.prototype.getOrientationEuler = function() {
 //     return null;
 //   }
 // };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
