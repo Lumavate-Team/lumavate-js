@@ -1,0 +1,38 @@
+[
+  {
+    "label": "Camera Tracking",
+    "icon": "/assets/colts.png",
+    "tags": ["body"],
+    "type":"camera-tracking",
+    "properties": [
+      {
+        "helpText": null,
+        "label": "Tracker Type",
+        "name": "trackingType",
+        "section": "Properties",
+        "type": "dropdown",
+        "options": {
+          "colorTracker": "By Color",
+          "imageTracker": "By Image"
+        }
+      }
+    ],
+    "template": "<script>alert({{ componentData.videoUrl.url }});</script>"
+  },
+  {
+    "label": "Colts 3D",
+    "icon": "/assets/colts.png",
+    "tags": ["tracking-handler"],
+    "type":"colts-3d",
+    "properties": [
+      {
+        "helpText": null,
+        "label": "Video Url",
+        "name": "videoUrl",
+        "section": "Video Information",
+        "type": "page-link"
+      }
+    ],
+    "template": "<script>alert({{ componentData.videoUrl.url }});</script>"
+  }
+]
