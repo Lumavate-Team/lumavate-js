@@ -3,7 +3,7 @@
     "label": "Camera Tracking",
     "icon": "/assets/colts.png",
     "tags": ["body"],
-    "type":"camera-tracking",
+    "type":"tracking",
     "properties": [
       {
         "helpText": null,
@@ -17,7 +17,7 @@
         }
       }
     ],
-    "template": "<script>alert({{ componentData.videoUrl.url }});</script>"
+    "template": "<script>new LumavateTracking({{ componentData }});</script>"
   },
   {
     "label": "Colts 3D",
