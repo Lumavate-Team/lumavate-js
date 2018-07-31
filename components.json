@@ -1,7 +1,48 @@
 [
   {
-    "label": "Camera Tracking",
-    "icon": "/assets/colts.png",
+    "label": "Color Tracking",
+    "icon": "/assets/color-wheel.png",
+    "tags": ["body"],
+    "type":"tracking",
+    "properties": [
+      {
+        "helpText": null,
+        "label": "Color to track",
+        "name": "color",
+        "section": null,
+        "type": "color",
+        "default": "#32506A"
+      },
+      {
+        "helpText": "The minimum dimension to classify a rectangle (1-50)",
+        "label": "Min Dimension",
+        "name": "minDimension",
+        "section": null,
+        "type": "numeric",
+        "default": 20,
+        "options":{
+          "min": 1,
+          "max": 50
+        }
+      },
+      {
+        "helpText": "The minimum group size to be classified as a rectangle (1-50)",
+        "label": "Min Group Size",
+        "name": "minGroupSize",
+        "section": null,
+        "type": "numeric",
+        "default": 30,
+        "options":{
+          "min": 1,
+          "max": 50
+        }
+      }
+    ],
+    "template": "<script>new LumavateTracking({{ componentData }});</script>"
+  },
+  {
+    "label": "Image Tracking",
+    "icon": "/assets/picture.png",
     "tags": ["body"],
     "type":"tracking",
     "properties": [
